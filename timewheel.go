@@ -51,16 +51,14 @@ func trigger(name string, d ITimeWheelData, tf TriggerFunc, tm time.Time) chan b
 	)
 
 	go func() {
-		for {
-			select {
-			case <-ticker.C:
-				tf(d)
+		select {
+		case <-ticker.C:
+			tf(d)
+			return
+		case isStop = <-stopCh:
+			if isStop {
+				fmt.Printf("name: %s stop\n", name)
 				return
-			case isStop = <-stopCh:
-				if isStop {
-					fmt.Printf("name: %s stop\n", name)
-					return
-				}
 			}
 		}
 	}()
