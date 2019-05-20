@@ -65,3 +65,12 @@ func trigger(name string, d ITimeWheelData, tf TriggerFunc, tm time.Time) chan b
 
 	return stopCh
 }
+
+func (tp *taskPool) Clear() {
+	for _, ch := range tp.stopCh {
+		ch <- true
+	}
+
+	tp.queue = make(map[string]time.Time)
+	tp.stopCh = make(map[string]chan bool)
+}
