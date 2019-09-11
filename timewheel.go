@@ -24,22 +24,32 @@ type taskPool struct {
 	stopCh map[string]chan bool
 }
 
-func (tp *taskPool) Schedule(name string, d ITimeWheelData, tf TriggerFunc, tm time.Time) {
-	_, tok := tp.queue[name]
-	now := time.Now()
-	if tm.Unix() <= now.Unix() {
+func (tp *taskPool) Schedule(name string, d ITimeWheelData, tf TriggerFunc, tm time.Time, isClearOld bool) {
+	var (
+		eq, tok = tp.queue[name]
+		now     = time.Now()
+	)
+
+	if eq.Equal(tm) {
+		return
+	}
+
+	if !tm.After(now) {
+		if isClearOld && tok {
+			tp.stopCh[name] <- true
+			delete(tp.queue, name)
+			delete(tp.stopCh, name)
+		}
 		tf(d)
 		return
 	}
-	if !tok {
-		tp.queue[name] = tm
-		tp.stopCh[name] = trigger(name, d, tf, tm)
-		fmt.Printf("TimeWheel will excute tf(%p) at %+v\n", tf, tm)
-		return
+
+	if tok {
+		tp.stopCh[name] <- true
 	}
-	tp.stopCh[name] <- true
 	tp.queue[name] = tm
 	tp.stopCh[name] = trigger(name, d, tf, tm)
+	fmt.Printf("TimeWheel will excute tf(%p) at %+v\n", tf, tm)
 }
 
 func trigger(name string, d ITimeWheelData, tf TriggerFunc, tm time.Time) chan bool {
