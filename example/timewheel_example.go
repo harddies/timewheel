@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	"my-go/study/timewheel"
 	"strconv"
 	"time"
+	"timewheel"
 )
 
 var tw = timewheel.New()
